@@ -6,7 +6,12 @@ Project based on SDK 15.0
 ## Setup
 ### Hardware
 
+* DS18B20 sensor
+* 4.7K Ohm resistor
+* Breadboard and jumper wires as needed.
+
 <img src="https://github.com/sigurdnev/Nordic-DS18B20/blob/master/nordic-ds18b20.jpg" width="800">
+
 
 ### Software
 * Download SDK 15

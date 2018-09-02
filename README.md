@@ -6,6 +6,7 @@ Project based on SDK 15.0
 ## Setup
 ### Hardware
 
+* nRF52832-DK or nRF52840-DK
 * DS18B20 sensor
 * 4.7K Ohm resistor
 * Breadboard and jumper wires as needed.

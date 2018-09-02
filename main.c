@@ -52,14 +52,14 @@ void main()
 {
     ds18b20_setResolution(12);
 
-    temp = ds18b20_get_temp();
+    temp = ds18b20_get_temp_method_2();
     printf("Temperature: %.3f \r\n", temp);
 
 
     while(1)
     {
         nrf_delay_ms(2000);
-        temp = ds18b20_get_temp();
+        temp = ds18b20_get_temp_method_2();
         printf("Temperature: %.3f \r\n", temp);
     }
 }

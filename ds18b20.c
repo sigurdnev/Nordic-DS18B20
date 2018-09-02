@@ -254,7 +254,7 @@ void ds18b20_readScratchPad(uint8_t *scratchPad, uint8_t fields)
 
 /**@brief Function for request temperature reading
  */
-void DS18B20_requestTemperatures(void)
+void ds18b20_requestTemperatures(void)
 {
     ds18b20_reset();
     ds18b20_send_byte(0xCC);
@@ -266,7 +266,7 @@ void DS18B20_requestTemperatures(void)
  */
 float ds18b20_get_temp_method_2(void)
 {
-    DS18B20_requestTemperatures();
+    ds18b20_requestTemperatures();
     unsigned char check;
 
     ScratchPad scratchPad;

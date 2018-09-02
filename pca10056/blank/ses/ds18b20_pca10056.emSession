@@ -61,6 +61,7 @@
  </Watch4>
  <Files>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="47" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="35" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="312" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../ds18b20.c" selected="0" top="294" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="ds18b20_pca10056" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="ds18b20_pca10056" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

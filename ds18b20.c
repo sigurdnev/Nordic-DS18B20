@@ -181,7 +181,8 @@ unsigned char ds18b20_reset(void)
 
 /**@brief Function for reading temperature.
  */
-float ds18b20_get_temp(void) {
+float ds18b20_get_temp(void)
+{
     unsigned char check;
     char temp1=0, temp2=0;
 
@@ -223,7 +224,8 @@ uint8_t OneWire_read_bit(void)
 
 /**@brief Function for reading.
  */
-uint8_t OneWire_read() {
+uint8_t OneWire_read()
+{
     uint8_t bitMask;
     uint8_t r = 0;
 

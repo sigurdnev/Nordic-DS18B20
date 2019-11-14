@@ -46,6 +46,7 @@
 #define DS_PIN 26
 
 // Commands
+#define SKIPROM         0xCC
 #define STARTCONVO      0x44
 #define READSCRATCH     0xBE
 #define WRITESCRATCH    0x4E
@@ -53,6 +54,7 @@
 // Scratchpad locations
 #define TEMP_LSB        0
 #define TEMP_MSB        1
+#define SCRATCHPAD_CRC  8
 
 // Device resolution
 #define TEMP_9_BIT  0x1F //  9 bit
@@ -80,34 +82,6 @@ void ds18b20_send(char bit)
 }
 
 
-/**@brief Function for reading one bit from bus.
- */
-unsigned char ds18b20_read(void)
-{
-    unsigned char presence=0;
-    nrf_gpio_cfg_output(DS_PIN);
-    nrf_gpio_pin_clear(DS_PIN);
-
-    nrf_delay_us(2);
-
-    nrf_gpio_pin_set(DS_PIN);;
-    nrf_delay_us(15);
-
-    nrf_gpio_cfg_input(DS_PIN,NRF_GPIO_PIN_NOPULL);
-
-    if(nrf_gpio_pin_read(DS_PIN))
-    {
-        presence = 1;
-    }
-    else
-    {
-        presence = 0;
-    }
-    
-    return presence;
-}
-
-
 /**@brief Function for sending one byte to bus.
  */
 void ds18b20_send_byte(char data)
@@ -116,26 +90,11 @@ void ds18b20_send_byte(char data)
     unsigned char x;
     for(i=0;i<8;i++)
     {
-      x = data>>i;
-      x &= 0x01;
-      ds18b20_send(x);
+        x = data>>i;
+        x &= 0x01;
+        ds18b20_send(x);
     }
     nrf_delay_us(100);
-}
-
-
-/**@brief Function for reading one byte from bus.
- */
-unsigned char ds18b20_read_byte(void)
-{
-    unsigned char i;
-    unsigned char data = 0;
-    for (i=0;i<8;i++)
-    {
-        if(ds18b20_read()) data|=0x01<<i;
-        nrf_delay_us(15);
-    }
-    return(data);
 }
 
 
@@ -143,17 +102,16 @@ unsigned char ds18b20_read_byte(void)
  */
 unsigned char ds18b20_reset(void)
 {
-  unsigned char presence;
+    unsigned char presence;
 
-  nrf_gpio_cfg_output(DS_PIN);
-  nrf_gpio_pin_clear(DS_PIN);
+    nrf_gpio_cfg_output(DS_PIN);
+    nrf_gpio_pin_clear(DS_PIN);
 
-  nrf_delay_us(500);
-  nrf_gpio_pin_set(DS_PIN);
+    nrf_delay_us(480);
+    nrf_gpio_pin_set(DS_PIN);
 
-  nrf_gpio_cfg_input(DS_PIN,NRF_GPIO_PIN_NOPULL); // usikkert p� pull her. m� sjekkes
-  nrf_delay_us(30);
-
+    nrf_gpio_cfg_input(DS_PIN,NRF_GPIO_PIN_NOPULL);
+    nrf_delay_us(70);
 
     if(nrf_gpio_pin_read(DS_PIN) == 0)
     {
@@ -164,45 +122,9 @@ unsigned char ds18b20_reset(void)
         presence = 0;
     }
 
-    nrf_delay_us(470);
+    nrf_delay_us(410);
 
-    if(nrf_gpio_pin_read(DS_PIN) == 1)
-    {
-        presence = 1;
-    }
-    else
-    {
-        presence = 0;
-    }
-
-  return presence;
-}
-
-
-/**@brief Function for reading temperature.
- */
-float ds18b20_get_temp(void)
-{
-    unsigned char check;
-    char temp1=0, temp2=0;
-
-    check=ds18b20_reset();
-    if(check)
-    {
-        ds18b20_send_byte(0xCC);
-        ds18b20_send_byte(0x44);
-        nrf_delay_ms(600UL);
-        check=ds18b20_reset();
-        ds18b20_send_byte(0xCC);
-        ds18b20_send_byte(0xBE);
-        temp1=ds18b20_read_byte();
-        temp2=ds18b20_read_byte();
-        check=ds18b20_reset();
-        float temp=0;
-        temp=(float)(temp1+(temp2*256))/16;
-        return temp;
-    }
-      return 0;
+    return presence;
 }
 
 
@@ -230,35 +152,60 @@ uint8_t OneWire_read()
     uint8_t r = 0;
 
     for (bitMask = 0x01; bitMask; bitMask <<= 1) {
-	if ( OneWire_read_bit()) r |= bitMask;
+        if (OneWire_read_bit()) r |= bitMask;
     }
     return r;
 }
 
+uint8_t crc8(const uint8_t *addr, uint8_t len)
+{
+    uint8_t crc = 0;
+
+    while (len--) {
+        uint8_t inbyte = *addr++;
+        for (uint8_t i = 8; i; i--) {
+            uint8_t mix = (crc ^ inbyte) & 0x01;
+            crc >>= 1;
+            if (mix) crc ^= 0x8C;
+            inbyte >>= 1;
+        }
+    }
+    return crc;
+}
 
 /**@brief Function for reading scratchpad value
  */
-void ds18b20_readScratchPad(uint8_t *scratchPad, uint8_t fields)
+bool ds18b20_readScratchPad(uint8_t *scratchPad)
 {
-    ds18b20_reset();
-    ds18b20_send_byte(0xCC);
+    if (!ds18b20_reset()) return false;
+    ds18b20_send_byte(SKIPROM);
     ds18b20_send_byte(READSCRATCH);
 
-    for(uint8_t i=0; i < fields; i++)
+    for(uint8_t i=0; i < 9; i++)
     {
         scratchPad[i] = OneWire_read();
     }
-    ds18b20_reset();
+    bool flag = false;
+    for(uint8_t i=0; i < 9; i++)
+    {
+        if (scratchPad[i] != 0)
+        {
+            flag = true;
+            break;
+        }
+    }
+    return flag && (crc8(scratchPad, 8) == scratchPad[SCRATCHPAD_CRC]);
 }
 
 
 /**@brief Function for request temperature reading
  */
-void ds18b20_requestTemperatures(void)
+bool ds18b20_requestTemperatures(void)
 {
-    ds18b20_reset();
-    ds18b20_send_byte(0xCC);
+    if (!ds18b20_reset()) return false;
+    ds18b20_send_byte(SKIPROM);
     ds18b20_send_byte(STARTCONVO);
+    return true;
 }
 
 
@@ -266,11 +213,11 @@ void ds18b20_requestTemperatures(void)
  */
 float ds18b20_get_temp_method_2(void)
 {
-    ds18b20_requestTemperatures();
-    unsigned char check;
+    while (!ds18b20_requestTemperatures()) {}
 
-    ScratchPad scratchPad;
-    ds18b20_readScratchPad(scratchPad, 2);
+    ScratchPad scratchPad = {0};
+    while (!ds18b20_readScratchPad(scratchPad)) {}
+
     int16_t rawTemperature = (((int16_t)scratchPad[TEMP_MSB]) << 8) | scratchPad[TEMP_LSB];
     float temp = 0.0625 * rawTemperature;
 
@@ -282,8 +229,8 @@ float ds18b20_get_temp_method_2(void)
  */
 void ds18b20_setResolution(uint8_t resolution)
 {
-    ds18b20_reset();
-    ds18b20_send_byte(0xCC);
+    while (!ds18b20_reset()) {}
+    ds18b20_send_byte(SKIPROM);
     ds18b20_send_byte(WRITESCRATCH);
     // two dummy values for LOW & HIGH ALARM
     ds18b20_send_byte(0);
@@ -307,6 +254,5 @@ void ds18b20_setResolution(uint8_t resolution)
             ds18b20_send_byte(TEMP_9_BIT);
             break;
     }
-    ds18b20_reset();
+    while (!ds18b20_reset()) {}
 }
-

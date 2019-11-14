@@ -8,7 +8,9 @@ Project based on SDK 15.0
 
 * nRF52832-DK or nRF52840-DK
 * DS18B20 sensor
-* 4.7K Ohm resistor
+* Powering DS18B20 with external VCC (non-parasite mode)
+* Only one sensor data wire on one PIN (bus)
+* 4.7K Ohm pull-up resistor to VCC (3.3V-5.5V)
 * Breadboard and jumper wires as needed.
 
 <img src="https://github.com/sigurdnev/Nordic-DS18B20/blob/master/nordic-ds18b20.jpg" width="800">
